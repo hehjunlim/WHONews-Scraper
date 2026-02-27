@@ -113,8 +113,6 @@ Each article contains five fields:
 
 ## 📚 Usage Examples
 
-## 📚 Usage Examples
-
 ### Basic Scraping
 
 **Simple one-liner:**
@@ -164,6 +162,23 @@ json_str = get_articles_category_json(articles, category="research")
 print(json_str)
 # Pretty-printed JSON array of research-related articles
 ```
+# Check cron schedule
+docker exec healthcare-news-scheduler crontab -l
+
+# View cron execution logs
+docker exec healthcare-news-scheduler tail -f /var/log/cron.log
+
+# View scheduler container logs
+docker logs healthcare-news-scheduler --follow
+
+# Restart scheduler
+docker compose restart scheduler
+
+# Stop scheduler
+docker compose stop scheduler
+
+# Change schedule (edit .env or set environment variable)
+CRON_SCHEDULE="0 8 * * *" docker compose up -d scheduler
 
 ### Parse Newsletter HTML (Offline Mode)
 
