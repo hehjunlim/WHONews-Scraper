@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Today's WHO Healthcare News</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            color: #2d3748;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .date-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            color: #718096;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            color: #2d3748;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .filters {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            color: #4a5568;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .articles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+        }
+
+        .article-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border-left: 5px solid #667eea;
+        }
+
+        .article-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .article-card.research {
+            border-left-color: #4299e1;
+        }
+
+        .article-card.outbreak {
+            border-left-color: #f56565;
+        }
+
+        .article-card.policy {
+            border-left-color: #48bb78;
+        }
+
+        .article-card.public_health {
+            border-left-color: #9f7aea;
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+        }
+
+        .category-badge.research {
+            background: #bee3f8;
+            color: #2c5282;
+        }
+
+        .category-badge.outbreak {
+            background: #fed7d7;
+            color: #822727;
+        }
+
+        .category-badge.policy {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .category-badge.public_health {
+            background: #e9d8fd;
+            color: #44337a;
+        }
+
+        .category-badge.general {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+
+        .article-title {
+            color: #2d3748;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .article-date {
+            color: #718096;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .article-source {
+            color: #a0aec0;
+            font-size: 0.85rem;
+            font-style: italic;
+        }
+
+        .read-more {
+            display: inline-block;
+            margin-top: 15px;
+            color: #667eea;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .read-more:hover {
+            color: #764ba2;
+        }
+
+        .no-results {
+            background: white;
+            border-radius: 15px;
+            padding: 60px;
+            text-align: center;
+            color: #718096;
+        }
+
+        .refresh-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #667eea;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.5);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .articles-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏥 WHO Healthcare News</h1>
+            <div class="date-badge">📅 February 27, 2026 - Today's Update</div>
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-label">Total Articles</span>
+                    <span class="stat-value" id="total-count">12</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Last Updated</span>
+                    <span class="stat-value" style="font-size: 1.2rem;">08:00 AM</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Source</span>
+                    <span class="stat-value" style="font-size: 1.2rem;">WHO</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="filters">
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-category="all">All Categories</button>
+                <button class="filter-btn" data-category="research">Research</button>
+                <button class="filter-btn" data-category="outbreak">Outbreak</button>
+                <button class="filter-btn" data-category="policy">Policy</button>
+                <button class="filter-btn" data-category="public_health">Public Health</button>
+            </div>
+        </div>
+
+        <div class="articles-grid" id="articles-container">
+            <!-- Articles will be dynamically inserted here -->
+        </div>
+    </div>
+
+    <button class="refresh-btn" onclick="fetchLatestNews()">🔄 Refresh News</button>
+
+    <script>
+        // Sample data - in production, this would come from your scraper API
+        const sampleArticles = [
+            {
+                title: "WHO Announces New Guidelines for Pandemic Preparedness",
+                date: "Thu, Feb 27, 2026",
+                category: "policy",
+                url: "https://www.who.int/news/item/2026-02-27-pandemic-preparedness",
+                source: "healthcare_web"
+            },
+            {
+                title: "Clinical Trial Shows Promise for New Malaria Vaccine",
+                date: "Wed, Feb 26, 2026",
+                category: "research",
+                url: "https://www.who.int/news/item/2026-02-26-malaria-vaccine-trial",
+                source: "healthcare_web"
+            },
+            {
+                title: "Dengue Fever Outbreak Detected in Southeast Asia",
+                date: "Wed, Feb 26, 2026",
+                category: "outbreak",
+                url: "https://www.who.int/news/item/2026-02-26-dengue-outbreak",
+                source: "healthcare_web"
+            },
+            {
+                title: "Global Vaccination Coverage Reaches Record High",
+                date: "Tue, Feb 25, 2026",
+                category: "public_health",
+                url: "https://www.who.int/news/item/2026-02-25-vaccination-coverage",
+                source: "healthcare_web"
+            },
+            {
+                title: "Study Reveals Long-term Effects of COVID-19 on Heart Health",
+                date: "Tue, Feb 25, 2026",
+                category: "research",
+                url: "https://www.who.int/news/item/2026-02-25-covid-heart-study",
+                source: "healthcare_web"
+            },
+            {
+                title: "WHO Updates Treatment Guidelines for Tuberculosis",
+                date: "Mon, Feb 24, 2026",
+                category: "policy",
+                url: "https://www.who.int/news/item/2026-02-24-tb-guidelines",
+                source: "healthcare_web"
+            },
+            {
+                title: "Mental Health Services Expansion in Low-Income Countries",
+                date: "Mon, Feb 24, 2026",
+                category: "public_health",
+                url: "https://www.who.int/news/item/2026-02-24-mental-health-expansion",
+                source: "healthcare_web"
+            },
+            {
+                title: "New Antibiotic Resistance Patterns Identified in Europe",
+                date: "Sun, Feb 23, 2026",
+                category: "research",
+                url: "https://www.who.int/news/item/2026-02-23-antibiotic-resistance",
+                source: "healthcare_web"
+            },
+            {
+                title: "Measles Cases Surge in Western Pacific Region",
+                date: "Sat, Feb 22, 2026",
+                category: "outbreak",
+                url: "https://www.who.int/news/item/2026-02-22-measles-surge",
+                source: "healthcare_web"
+            },
+            {
+                title: "WHO Launches Initiative to Combat Non-Communicable Diseases",
+                date: "Fri, Feb 21, 2026",
+                category: "public_health",
+                url: "https://www.who.int/news/item/2026-02-21-ncd-initiative",
+                source: "healthcare_web"
+            },
+            {
+                title: "Breakthrough in Cancer Treatment: New Immunotherapy Shows Results",
+                date: "Fri, Feb 21, 2026",
+                category: "research",
+                url: "https://www.who.int/news/item/2026-02-21-immunotherapy-breakthrough",
+                source: "healthcare_web"
+            },
+            {
+                title: "International Health Regulations Updated for Climate Change",
+                date: "Thu, Feb 20, 2026",
+                category: "policy",
+                url: "https://www.who.int/news/item/2026-02-20-ihr-climate-update",
+                source: "healthcare_web"
+            }
+        ];
+
+        let currentFilter = 'all';
+
+        function renderArticles(filter = 'all') {
+            const container = document.getElementById('articles-container');
+            const filteredArticles = filter === 'all' 
+                ? sampleArticles 
+                : sampleArticles.filter(article => article.category === filter);
+
+            if (filteredArticles.length === 0) {
+                container.innerHTML = `
+                    <div class="no-results">
+                        <h2>No articles found</h2>
+                        <p>Try selecting a different category</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filteredArticles.map(article => `
+                <div class="article-card ${article.category}" onclick="window.open('${article.url}', '_blank')">
+                    <span class="category-badge ${article.category}">${article.category.replace('_', ' ')}</span>
+                    <h3 class="article-title">${article.title}</h3>
+                    <p class="article-date">📅 ${article.date}</p>
+                    <p class="article-source">Source: ${article.source}</p>
+                    <a href="${article.url}" class="read-more" onclick="event.stopPropagation()">Read Full Article →</a>
+                </div>
+            `).join('');
+
+            // Update total count
+            document.getElementById('total-count').textContent = filteredArticles.length;
+        }
+
+        // Filter functionality
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active class from all buttons
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                // Add active class to clicked button
+                this.classList.add('active');
+                // Render filtered articles
+                const category = this.getAttribute('data-category');
+                currentFilter = category;
+                renderArticles(category);
+            });
+        });
+
+        // Simulate fetching latest news
+        function fetchLatestNews() {
+            // In production, this would call your API endpoint
+            // fetch('/api/articles/today')
+            //     .then(response => response.json())
+            //     .then(data => {
+            //         sampleArticles = data;
+            //         renderArticles(currentFilter);
+            //     });
+            
+            // For demo, just re-render with animation
+            const container = document.getElementById('articles-container');
+            container.style.opacity = '0.5';
+            setTimeout(() => {
+                renderArticles(currentFilter);
+                container.style.opacity = '1';
+                alert('✅ News updated! (In production, this would fetch from your scraper database)');
+            }, 500);
+        }
+
+        // Initial render
+        renderArticles();
+
+        // Auto-refresh every 5 minutes (for demo purposes)
+        // setInterval(fetchLatestNews, 5 * 60 * 1000);
+    </script>
+</body>
+</html>

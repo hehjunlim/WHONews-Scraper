@@ -1,10 +1,10 @@
 from typing import Dict, Iterable, List
 
 from healthcare_news_scraper.http import RequestsHttpClient
-from healthcare_news_scraper.protocols import EventScraper, EventStore, HttpClient
+from healthcare_news_scraper.protocols import ArticleScraper, ArticleStore, HttpClient
 from healthcare_news_scraper.runner_once import run_once
 from healthcare_news_scraper.scraper import HealthcareNewsScraper
-from healthcare_news_scraper.storage import SQLiteEventStore
+from healthcare_news_scraper.storage import SQLiteArticleStore
 from healthcare_news_scraper.config import PipelineConfig
 from tests.http_doubles import StubHttpClient, StubHttpResponse
 
@@ -32,17 +32,17 @@ class StubStore:
         status: str,
         attempts: int,
         error: str,
-        events: Iterable[Dict[str, str]],
+        articles: Iterable[Dict[str, str]],
     ) -> object:
         self.persisted = True
-        event_list = list(events)
+        article_list = list(articles)
         return type(
             "RunRecordLike",
             (),
             {
                 "run_id": 1,
                 "status": status,
-                "fetched_count": len(event_list),
+                "fetched_count": len(article_list),
                 "attempts": attempts,
                 "error": error,
             },
@@ -51,11 +51,11 @@ class StubStore:
 
 def test_sqlite_store_satisfies_event_store_protocol(tmp_path):
     db_path = tmp_path / "events.db"
-    assert isinstance(SQLiteEventStore(str(db_path)), EventStore)
+    assert isinstance(SQLiteArticleStore(str(db_path)), ArticleStore)
 
 
 def test_healthcare_news_scraper_satisfies_event_scraper_protocol():
-    assert isinstance(HealthcareNewsScraper(delay_seconds=0), EventScraper)
+    assert isinstance(HealthcareNewsScraper(delay_seconds=0), ArticleScraper)
 
 
 def test_requests_http_client_satisfies_http_client_protocol():

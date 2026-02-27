@@ -202,6 +202,63 @@ DB_PATH=./healthcare_news.db ./scripts/verify_db.sh
 
 ---
 
+## 🎨 Frontend Sample
+
+A complete, modern web interface is included to visualize today's healthcare news!
+
+### Quick Preview
+
+![Sample Frontend](https://via.placeholder.com/800x400/667eea/ffffff?text=WHO+Healthcare+News+Dashboard)
+
+**Features:**
+- 📊 Real-time article display with category filtering
+- 🎨 Modern, responsive design with purple gradient theme
+- 🏷️ Color-coded categories (Research, Outbreak, Policy, Public Health)
+- 📱 Mobile-friendly card-based layout
+- 🔄 Auto-refresh capability
+
+### View the Sample
+
+**Option 1: Static Sample (with demo data)**
+```bash
+# Open the self-contained sample HTML
+open examples/frontend_sample.html
+```
+
+**Option 2: Generate with Real Data**
+```bash
+# Scrape live WHO news and generate HTML
+python examples/generate_frontend.py
+
+# This will:
+# 1. Fetch latest articles from WHO
+# 2. Generate todays_news.html with real data  
+# 3. Open in your default browser
+```
+
+### Integration Example
+
+```python
+from healthcare_news_scraper import scrape_default_healthcare_news
+import json
+
+# Scrape articles
+articles = scrape_default_healthcare_news()
+
+# Generate JSON for frontend
+articles_json = json.dumps(articles, indent=2)
+print(f"Found {len(articles)} articles for your dashboard!")
+```
+
+**See [examples/README.md](examples/README.md) for:**
+- Complete integration guide
+- Flask/FastAPI backend examples
+- Database integration patterns
+- Customization instructions
+- Production deployment options
+
+---
+
 ## ⚙️ Configuration
 
 All settings are controlled via **environment variables** (no config files needed).
@@ -296,22 +353,163 @@ The package raises **typed domain exceptions** — no silent failures:
 
 ### Architecture
 
+#### Data Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         ORCHESTRATION LAYER                         │
+│                         (runner_once.py)                            │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │ 1. Load config    2. Scrape    3. Filter    4. Persist       │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────┘
+                                   │
+        ┌──────────────────────────┼──────────────────────────┐
+        ▼                          ▼                          ▼
+┌──────────────┐          ┌──────────────┐          ┌──────────────┐
+│   SCRAPER    │          │   FILTERS    │          │   STORAGE    │
+│  (scraper.py)│          │ (filters.py) │          │ (storage.py) │
+│              │          │              │          │              │
+│ Implements:  │          │ Implements:  │          │ Implements:  │
+│ ArticleScraper│         │ • Keyword    │          │ ArticleStore │
+│              │          │   filtering  │          │              │
+└──────┬───────┘          │ • Category   │          └──────┬───────┘
+       │                  │   filtering  │                 │
+       │ uses             └──────────────┘                 │ uses
+       ▼                                                    ▼
+┌──────────────┐                                   ┌──────────────┐
+│     HTTP     │                                   │   MODELS     │
+│   (http.py)  │                                   │ (models.py)  │
+│              │                                   │              │
+│ Implements:  │                                   │ HealthcareArticle│
+│ HttpClient   │                                   │  dataclass   │
+│              │                                   └──────────────┘
+│ Wraps:       │
+│ requests lib │
+└──────────────┘
+
+                    DATA FLOW: WHO News → HTTP → Parser → Filter → SQLite
+```
+
+#### Source Tree
+
+```
+WHONews-Scraper/
+├── src/
+│   └── healthcare_news_scraper/
+│       ├── __init__.py              # Public API exports
+│       ├── config.py                # Environment variable configuration
+│       ├── exceptions.py            # Domain exception hierarchy
+│       ├── filters.py               # Keyword/category filtering
+│       ├── formatters.py            # JSON output formatting
+│       ├── http.py                  # HTTP client (only file importing requests)
+│       ├── models.py                # HealthcareArticle dataclass
+│       ├── newsletter_parser.py     # Newsletter HTML parsing
+│       ├── protocols.py             # typing.Protocol interfaces (DIP boundaries)
+│       ├── runner_once.py           # Main pipeline orchestration
+│       ├── scheduler.py             # Retry/backoff helpers
+│       ├── scraper.py               # Web scraping implementation
+│       └── storage.py               # SQLite persistence
+│
+├── tests/
+│   ├── __init__.py
+│   ├── http_doubles.py              # Test doubles for HTTP layer
+│   ├── test_e2e_live.py             # Live integration test (skipped by default)
+│   ├── test_filter_unit.py          # Filter logic tests
+│   ├── test_newsletter_parser_unit.py
+│   ├── test_package_unit.py         # Package imports test
+│   ├── test_protocols_unit.py       # Protocol compliance tests
+│   ├── test_public_api_unit.py      # Public API tests
+│   ├── test_scheduler_unit.py       # Retry logic tests
+│   ├── test_scraper_unit.py         # Scraping logic tests
+│   ├── test_storage_unit.py         # Database persistence tests
+│   └── fixtures/
+│       ├── sample_events_page.html  # Test fixture for scraper
+│       └── sample_newsletter.html   # Test fixture for newsletter parser
+│
+├── docs/
+│   ├── DOCKER_KUBERNETES_TESTING.md
+│   ├── DOCKER_TESTING.md
+│   ├── DOCKER_TEST_RESULTS.md
+│   ├── QUICK_DOCKER_TEST.md
+│   ├── RUNBOOK.md
+│   ├── SUBMISSION_CHECKLIST.md
+│   ├── TESTING_STRATEGY.md
+│   └── TRACEABILITY.md
+│
+├── project_management/
+│   ├── README.md
+│   ├── NEXT_STEPS.md
+│   ├── SESSION_LOG.md
+│   ├── STATUS.md
+│   ├── TASKS.md
+│   └── TECHNICAL_DEBT.md
+│
+├── sprints/
+│   ├── sprint_plan.md
+│   ├── active/                      # Empty - all sprints complete
+│   ├── completed/                   # Completed code quality sprints
+│   │   ├── sprint_06_dip_protocols.md
+│   │   ├── sprint_07_srp_decompose_scraper.md
+│   │   ├── sprint_08_extract_small_functions.md
+│   │   ├── sprint_09_error_handling.md
+│   │   ├── sprint_10_test_boundaries_http_abstraction.md
+│   │   └── sprint_11_docker_single_process.md
+│   └── planned/                     # Empty - all planned work complete
+│
+├── scripts/
+│   ├── build_review_bundle.sh       # Create submission bundle
+│   ├── run_once_entrypoint.sh       # Docker entrypoint
+│   ├── verify_build.sh              # Verify Docker build
+│   ├── verify_db.sh                 # Check SQLite database
+│   └── sql/
+│       ├── verify_latest_runs.sql
+│       ├── verify_schema.sql
+│       └── verify_snapshot_counts.sql
+│
+├── deploy/
+│   └── k8s-cronjob.yaml             # Kubernetes CronJob manifest
+│
+├── examples/                         # 🎨 Frontend samples and integration guides
+│   ├── README.md                    # Frontend documentation and deployment guide
+│   ├── frontend_sample.html         # Self-contained demo with sample data
+│   ├── generate_frontend.py         # Generate HTML with real scraped data
+│   └── styles.css                   # Stylesheet for generated pages
+│
+├── Dockerfile                        # Single-process container (run once & exit)
+├── docker-compose.yml                # Local development Docker config
+├── pyproject.toml                    # Poetry dependencies and config
+├── README.md                         # This file
+├── CHANGELOG.md                      # Version history
+├── CONTRIBUTING.md                   # Development guidelines
+└── LICENSE                           # MIT License
+```
+
+#### Module Responsibilities
+
 The package is split into **focused, single-purpose modules** following SOLID principles:
 
-| Module                 | Responsibility                                           |
-| ---------------------- | -------------------------------------------------------- |
-| `scraper.py`           | HTTP fetching and HTML parsing of healthcare news pages  |
-| `runner_once.py`       | Pipeline orchestration (scrape → filter → persist)       |
-| `storage.py`           | SQLite persistence (`SQLiteArticleStore`)                |
-| `filters.py`           | Keyword/category filtering logic                         |
-| `formatters.py`        | JSON serialization for AI/downstream use                 |
-| `newsletter_parser.py` | Parses newsletter HTML exports as a fallback             |
-| `http.py`              | `requests` adapter — the only file that uses HTTP        |
-| `protocols.py`         | `typing.Protocol` interfaces for all boundaries          |
-| `exceptions.py`        | Domain exception hierarchy                               |
-| `models.py`            | `HealthcareArticle` dataclass                            |
-| `config.py`            | Loads configuration from environment variables           |
-| `scheduler.py`         | Retry/backoff helpers                                    |
+| Module                 | Responsibility                                           | Protocol/Interface       |
+| ---------------------- | -------------------------------------------------------- | ------------------------ |
+| `scraper.py`           | HTTP fetching and HTML parsing of healthcare news pages  | `ArticleScraper`         |
+| `runner_once.py`       | Pipeline orchestration (scrape → filter → persist)       | Uses protocols           |
+| `storage.py`           | SQLite persistence (`SQLiteArticleStore`)                | `ArticleStore`           |
+| `filters.py`           | Keyword/category filtering logic                         | Pure function            |
+| `formatters.py`        | JSON serialization for AI/downstream use                 | Pure function            |
+| `newsletter_parser.py` | Parses newsletter HTML exports as a fallback             | Pure function            |
+| `http.py`              | `requests` adapter — the only file that uses HTTP        | `HttpClient`             |
+| `protocols.py`         | `typing.Protocol` interfaces for all boundaries          | Defines abstractions     |
+| `exceptions.py`        | Domain exception hierarchy                               | Exception classes        |
+| `models.py`            | `HealthcareArticle` dataclass                            | Data model               |
+| `config.py`            | Loads configuration from environment variables           | Configuration dataclass  |
+| `scheduler.py`         | Retry/backoff helpers                                    | Utility functions        |
+
+**Design Principles:**
+- **Dependency Inversion:** High-level modules depend on abstractions (protocols), not concrete implementations
+- **Single Responsibility:** Each module has one clear purpose
+- **Open/Closed:** Easy to extend (new scrapers, new storage) without modifying existing code
+- **Interface Segregation:** Protocols define minimal, focused contracts
+- **Dependency Injection:** All dependencies injected, making testing simple
 
 ---
 
@@ -358,6 +556,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
 
 ### 🚀 Getting Started
 - 📋 **[Project Management](project_management/README.md)** — Task tracking, status, next steps ⭐ **Start here for development**
+- 🎨 **[Frontend Examples](examples/README.md)** — Sample web interfaces, integration guides, deployment options ⭐ **Start here for UI**
 - ⚡ **[Quick Docker Test](docs/QUICK_DOCKER_TEST.md)** — 5-minute Docker quick start
 - 📊 **[Docker Test Results](docs/DOCKER_TEST_RESULTS.md)** — Latest testing results and verification
 

@@ -10,7 +10,7 @@ from typing import Callable, Dict, List, Optional
 from .config import PipelineConfig, load_config_from_env
 from .exceptions import ScraperNetworkError
 from .filters import filter_articles_by_keyword
-from .protocols import EventScraper, EventStore
+from .protocols import ArticleScraper, ArticleStore
 from .scheduler import backoff_seconds, is_transient_error as scheduler_is_transient_error
 
 
@@ -39,7 +39,7 @@ def is_transient_error(exc: Exception) -> bool:
 
 
 
-def _default_scraper(_config: PipelineConfig) -> EventScraper:
+def _default_scraper(_config: PipelineConfig) -> ArticleScraper:
     from .scraper import HealthcareNewsScraper
 
     return HealthcareNewsScraper()
@@ -66,12 +66,12 @@ def _run_scrape(config: PipelineConfig) -> List[Dict[str, str]]:
 def run_once(
     config: Optional[PipelineConfig] = None,
     scrape_func: Optional[Callable[[PipelineConfig], List[Dict[str, str]]]] = None,
-    store: Optional[EventStore] = None,
+    store: Optional[ArticleStore] = None,
 ) -> RunSummary:
     cfg = config or load_config_from_env()
     scrape = scrape_func or _run_scrape
-    event_store = store or _default_store(cfg)
-    event_store.init_schema()
+    article_store = store or _default_store(cfg)
+    article_store.init_schema()
 
     attempts = 0
     articles: List[Dict[str, str]] = []
@@ -104,7 +104,7 @@ def run_once(
     else:
         status = "success"
 
-    run_record = event_store.persist_run(
+    run_record = article_store.persist_run(
         source=cfg.scraper_strategy,
         fetched_at=datetime.now(timezone.utc).isoformat(),
         search_term=cfg.scraper_search_term,
@@ -112,7 +112,7 @@ def run_once(
         status=status,
         attempts=attempts,
         error=error_message,
-        events=articles,
+        articles=articles,
     )
 
     summary = RunSummary(
@@ -137,10 +137,10 @@ def run_once(
     return summary
 
 
-def _default_store(config: PipelineConfig) -> EventStore:
-    from .storage import SQLiteEventStore
+def _default_store(config: PipelineConfig) -> ArticleStore:
+    from .storage import SQLiteArticleStore
 
-    return SQLiteEventStore(config.db_path)
+    return SQLiteArticleStore(config.db_path)
 
 
 

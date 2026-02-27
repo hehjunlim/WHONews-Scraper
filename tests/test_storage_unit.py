@@ -1,9 +1,9 @@
-from healthcare_news_scraper.storage import SQLiteEventStore
+from healthcare_news_scraper.storage import SQLiteArticleStore
 
 
 def test_schema_creation(tmp_path):
     db_path = tmp_path / "events.db"
-    store = SQLiteEventStore(str(db_path))
+    store = SQLiteArticleStore(str(db_path))
 
     store.init_schema()
 
@@ -14,7 +14,7 @@ def test_schema_creation(tmp_path):
 
 def test_successful_write_and_snapshot(tmp_path):
     db_path = tmp_path / "events.db"
-    store = SQLiteEventStore(str(db_path))
+    store = SQLiteArticleStore(str(db_path))
     store.init_schema()
 
     run = store.persist_run(
@@ -25,7 +25,7 @@ def test_successful_write_and_snapshot(tmp_path):
         status="success",
         attempts=1,
         error="",
-        events=[
+        articles=[
             {
                 "title": "WHO Disease Outbreak Alert",
                 "url": "https://www.who.int/news/item/001",
@@ -44,7 +44,7 @@ def test_successful_write_and_snapshot(tmp_path):
 
 def test_dedupe_upsert_by_url(tmp_path):
     db_path = tmp_path / "events.db"
-    store = SQLiteEventStore(str(db_path))
+    store = SQLiteArticleStore(str(db_path))
     store.init_schema()
 
     event = {
@@ -62,7 +62,7 @@ def test_dedupe_upsert_by_url(tmp_path):
         status="success",
         attempts=1,
         error="",
-        events=[event],
+        articles=[event],
     )
 
     store.persist_run(
@@ -73,7 +73,7 @@ def test_dedupe_upsert_by_url(tmp_path):
         status="success",
         attempts=1,
         error="",
-        events=[event],
+        articles=[event],
     )
 
     assert store.count_rows("runs") == 2
@@ -83,7 +83,7 @@ def test_dedupe_upsert_by_url(tmp_path):
 
 def test_failed_run_persistence(tmp_path):
     db_path = tmp_path / "events.db"
-    store = SQLiteEventStore(str(db_path))
+    store = SQLiteArticleStore(str(db_path))
     store.init_schema()
 
     run = store.persist_run(
@@ -94,7 +94,7 @@ def test_failed_run_persistence(tmp_path):
         status="failure",
         attempts=3,
         error="timeout",
-        events=[],
+        articles=[],
     )
 
     latest = store.fetch_latest_run()

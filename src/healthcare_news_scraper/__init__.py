@@ -4,7 +4,7 @@ from .filters import filter_articles_by_keyword
 from .formatters import get_articles_category_json
 from .models import HealthcareArticle
 from .newsletter_parser import parse_newsletter_html
-from .protocols import EventScraper, EventStore, HttpClient, HttpResponse
+from .protocols import ArticleScraper, ArticleStore, HttpClient, HttpResponse
 from .scraper import HealthcareNewsScraper, scrape_default_healthcare_news
 
 try:
@@ -15,8 +15,8 @@ except PackageNotFoundError:  # pragma: no cover - local editable usage
 __all__ = [
     "HealthcareArticle",
     "HealthcareNewsScraper",
-    "EventScraper",
-    "EventStore",
+    "ArticleScraper",
+    "ArticleStore",
     "HttpClient",
     "HttpResponse",
     "filter_articles_by_keyword",

@@ -66,7 +66,7 @@ class RunRecord:
     error: str
 
 
-class SQLiteEventStore:
+class SQLiteArticleStore:
     def __init__(self, db_path: str) -> None:
         self.db_path = db_path
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
@@ -89,17 +89,17 @@ class SQLiteEventStore:
         with self._connect() as conn:
             conn.executescript(SCHEMA_SQL)
 
-    def _canonical_key(self, event: Dict[str, str]) -> str:
-        url = (event.get("url") or "").strip()
-        title = (event.get("title") or "").strip().lower()
+    def _canonical_key(self, article: Dict[str, str]) -> str:
+        url = (article.get("url") or "").strip()
+        title = (article.get("title") or "").strip().lower()
         if url:
             return f"url:{url}"
         return f"name:{title}"
 
-    def _upsert_product(self, conn: sqlite3.Connection, event: Dict[str, str]) -> int:
-        key = self._canonical_key(event)
-        name = (event.get("title") or "").strip() or "Untitled"
-        url = (event.get("url") or "").strip() or None
+    def _upsert_product(self, conn: sqlite3.Connection, article: Dict[str, str]) -> int:
+        key = self._canonical_key(article)
+        name = (article.get("title") or "").strip() or "Untitled"
+        url = (article.get("url") or "").strip() or None
 
         conn.execute(
             """
@@ -128,9 +128,9 @@ class SQLiteEventStore:
         status: str,
         attempts: int,
         error: str,
-        events: Iterable[Dict[str, str]],
+        articles: Iterable[Dict[str, str]],
     ) -> RunRecord:
-        event_list: List[Dict[str, str]] = list(events)
+        article_list: List[Dict[str, str]] = list(articles)
         with self._connect() as conn:
             conn.execute("BEGIN")
             cursor = conn.execute(
@@ -153,7 +153,7 @@ class SQLiteEventStore:
                     search_term,
                     record_limit,
                     status,
-                    len(event_list),
+                    len(article_list),
                     attempts,
                     error or "",
                 ),
@@ -161,8 +161,8 @@ class SQLiteEventStore:
             run_id = int(cursor.lastrowid)
 
             observed_at = datetime.now(timezone.utc).isoformat()
-            for event in event_list:
-                product_id = self._upsert_product(conn, event)
+            for article in article_list:
+                product_id = self._upsert_product(conn, article)
                 conn.execute(
                     """
                     INSERT OR REPLACE INTO product_snapshots (
@@ -180,10 +180,10 @@ class SQLiteEventStore:
                         run_id,
                         product_id,
                         None,
-                        event.get("title", ""),
+                        article.get("title", ""),
                         search_term,
-                        event.get("category", "general"),
-                        event.get("date", ""),
+                        article.get("category", "general"),
+                        article.get("date", ""),
                         observed_at,
                     ),
                 )
@@ -191,7 +191,7 @@ class SQLiteEventStore:
         return RunRecord(
             run_id=run_id,
             status=status,
-            fetched_count=len(event_list),
+            fetched_count=len(article_list),
             attempts=attempts,
             error=error or "",
         )

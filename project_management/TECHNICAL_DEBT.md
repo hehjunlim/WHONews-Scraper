@@ -2,43 +2,74 @@
 
 ## High Priority
 
-### 1. Inconsistent Internal Naming
-**Issue:** Protocol and class names use "Event" terminology while the domain is healthcare articles.
+### 1. ✅ **RESOLVED** - Inconsistent Internal Naming
+**Status:** COMPLETED February 27, 2026
 
-**Location:**
-- `src/healthcare_news_scraper/protocols.py`: `EventScraper`, `EventStore`
-- `src/healthcare_news_scraper/storage.py`: `SQLiteEventStore`
+**Original Issue:** Protocol and class names used "Event" terminology while the domain is healthcare articles.
 
-**Impact:** Confusing for developers, inconsistent with domain language
+**Resolution:**
+- ✅ `EventScraper` → `ArticleScraper` in `protocols.py`
+- ✅ `EventStore` → `ArticleStore` in `protocols.py`
+- ✅ `SQLiteEventStore` → `SQLiteArticleStore` in `storage.py`
+- ✅ Updated 20+ files with new imports
+- ✅ All tests passing (35 passed, 1 skipped)
 
-**Effort:** Medium (20+ files to update)
+### 2. ✅ **RESOLVED** - Variable Naming Throughout Codebase
+**Status:** COMPLETED February 27, 2026
 
-**Risk:** Medium (could break tests if not careful)
+**Original Issue:** Variables named `events` should be `articles` for consistency.
 
-### 2. Variable Naming Throughout Codebase
-**Issue:** Variables named `events` should be `articles` for consistency.
+**Resolution:**
+- ✅ Updated `storage.py` parameter from `events` to `articles`
+- ✅ Updated local variables `event_list` → `article_list`
+- ✅ Updated loop variables `event` → `article`
+- ✅ Updated protocol definitions
 
-**Location:** Throughout `runner_once.py`, `storage.py`, test files
+### 3. **NEW** - Database Schema Legacy Naming
+**Status:** DOCUMENTED - No immediate action required
 
-**Impact:** Medium - reduces code clarity
+**Issue:** Database schema contains legacy field and table names from Gary's Guide system:
+- **Field:** `event_date` in `product_snapshots` table (stores article publication date)
+- **Table:** `products` (stores articles)
+- **Table:** `product_snapshots` (stores article data snapshots)
 
-**Effort:** Medium (systematic search/replace needed)
+**Location:** `src/healthcare_news_scraper/storage.py` - SCHEMA_SQL
 
-**Risk:** Low (variable names are local)
+**Impact:** 
+- Low for new installations
+- High for existing databases (would require migration)
 
-### 3. Database Schema Unknown
-**Issue:** Database table names may still reference "events" instead of "articles"
+**Current Behavior:**
+```python
+# The event_date field stores: article.get("date", "")
+# Products table stores: healthcare articles
+# Product_snapshots stores: article data at observation time
+```
 
-**Location:** `storage.py` SQL statements
+**Recommended Action:**
+- **Option A (Breaking Change):** Create migration script to rename tables/fields
+  - `products` → `articles`
+  - `product_snapshots` → `article_snapshots`
+  - `event_date` → `publish_date` or `article_date`
+  - Effort: High (migration + testing)
+  - Risk: High (data migration, backward compatibility)
 
-**Impact:** High if changing (migration needed), Low if leaving as-is
+- **Option B (Current Approach - RECOMMENDED):** 
+  - Leave schema as-is for backward compatibility
+  - Document that "products" means "articles" in this context
+  - New installations will use these table names
+  - Effort: None
+  - Risk: None
 
-**Investigation Needed:** Check actual SQL CREATE/INSERT statements
+**Decision:** Option B - Document but don't change. The table names are internal implementation details not exposed to users.
 
 ## Medium Priority
 
 ### 4. GitHub Repository Name
 **Issue:** Repository still named `GarysGuide-Scraper` on GitHub
+
+**Current:** `hehjunlim/GarysGuide-Scraper`
+**Desired:** `hehjunlim/WHONews-Scraper`
 
 **Impact:** Low - just metadata
 

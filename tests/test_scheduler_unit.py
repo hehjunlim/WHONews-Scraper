@@ -4,7 +4,7 @@ from healthcare_news_scraper.config import PipelineConfig
 from healthcare_news_scraper.exceptions import ScraperNetworkError
 from healthcare_news_scraper.runner_once import PartialScrapeError, is_transient_error, run_once
 from healthcare_news_scraper.scheduler import validate_cron_schedule
-from healthcare_news_scraper.storage import SQLiteEventStore
+from healthcare_news_scraper.storage import SQLiteArticleStore
 
 
 def test_validate_cron_schedule_positive():
@@ -18,7 +18,7 @@ def test_validate_cron_schedule_negative():
 
 def test_retry_on_transient_error(tmp_path, monkeypatch):
     db_path = tmp_path / "events.db"
-    store = SQLiteEventStore(str(db_path))
+    store = SQLiteArticleStore(str(db_path))
 
     calls = {"count": 0}
 
@@ -43,7 +43,7 @@ def test_retry_on_transient_error(tmp_path, monkeypatch):
 
 def test_no_retry_on_non_transient_error(tmp_path):
     db_path = tmp_path / "events.db"
-    store = SQLiteEventStore(str(db_path))
+    store = SQLiteArticleStore(str(db_path))
 
     calls = {"count": 0}
 
@@ -68,12 +68,12 @@ def test_transient_error_classifier():
 
 def test_partial_status_when_some_data_and_error(tmp_path):
     db_path = tmp_path / "events.db"
-    store = SQLiteEventStore(str(db_path))
+    store = SQLiteArticleStore(str(db_path))
 
     def fake_scrape(_config):
         raise PartialScrapeError(
             "upstream parse warning",
-            partial_events=[
+            partial_articles=[
                 {
                     "title": "Medical Research Breakthrough",
                     "url": "https://www.who.int/news/item/002",

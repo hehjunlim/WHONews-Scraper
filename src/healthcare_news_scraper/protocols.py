@@ -4,13 +4,13 @@ from typing import Dict, Iterable, List, Optional, Protocol, runtime_checkable
 
 
 @runtime_checkable
-class EventScraper(Protocol):
+class ArticleScraper(Protocol):
     def get_articles(self) -> List[Dict[str, str]]:
         ...
 
 
 @runtime_checkable
-class EventStore(Protocol):
+class ArticleStore(Protocol):
     def init_schema(self) -> None:
         ...
 
@@ -24,7 +24,7 @@ class EventStore(Protocol):
         status: str,
         attempts: int,
         error: str,
-        events: Iterable[Dict[str, str]],
+        articles: Iterable[Dict[str, str]],
     ) -> object:
         ...
 
