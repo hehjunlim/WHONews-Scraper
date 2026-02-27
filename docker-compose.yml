@@ -1,0 +1,20 @@
+services:
+  scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: healthcare-news-scraper
+    environment:
+      SCRAPER_STRATEGY: ${SCRAPER_STRATEGY:-web}
+      SCRAPER_SEARCH_TERM: ${SCRAPER_SEARCH_TERM:-}
+      SCRAPER_LIMIT: ${SCRAPER_LIMIT:-0}
+      DB_PATH: ${DB_PATH:-/data/healthcare_news.db}
+      RETRY_ATTEMPTS: ${RETRY_ATTEMPTS:-3}
+      RETRY_BACKOFF_SECONDS: ${RETRY_BACKOFF_SECONDS:-5}
+      API_TOKEN: ${API_TOKEN:-}
+    volumes:
+      - healthcare_news_data:/data
+
+volumes:
+  healthcare_news_data:
+    name: healthcare_news_data
